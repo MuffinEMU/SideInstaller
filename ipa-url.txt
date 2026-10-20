@@ -1,0 +1,13 @@
+# MuffinEMU — unsigned IPA source for the on-device install page
+#
+# This fork signs MuffinEMU, not SideInstaller. The first non-comment line
+# below is the unsigned MuffinEMU build that every certificate in the pool
+# re-signs. It points at the SideStore/unsigned asset of MuffinEMU's latest
+# public release, so a new MuffinEMU release is picked up automatically — no
+# edit needed here. Override for a one-off run with the UNSIGNED_IPA_URL env.
+#
+# (The TrollStore build, MuffinEMU-fakesigned.ipa, is NOT used here: OTA
+# certificate installs re-sign the unsigned build, the same path SideStore
+# uses.)
+
+https://github.com/MuffinEMU/Muffin-EMU/releases/latest/download/MuffinEMU.ipa
