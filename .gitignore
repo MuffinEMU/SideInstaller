@@ -13,3 +13,7 @@ xcuserdata/
 DerivedData/
 .DS_Store
 SideInstaller.ipa
+
+# Signed IPAs are hosted as release assets, never committed (over the 100 MB git limit)
+output/*.ipa
+output-beta/*.ipa
