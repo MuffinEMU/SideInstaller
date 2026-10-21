@@ -111,6 +111,13 @@ jobs:
             # The IPA signed and offered for download is MuffinEMU's own unsigned
             # release build; the cards and page carry MuffinEMU's name and icon.
             echo "OUTPUT_PREFIX=muffinemu"
+            # Skip Apple-revoked certificates: nothing to install with, and each
+            # signed MuffinEMU IPA is ~140 MB to host.
+            echo "NEXCERTS_STATUS=signed"
+            # Signed IPAs are too big for git (100 MB file limit), so they are
+            # hosted as release assets; only the small manifests stay in the repo.
+            echo "RELEASE_TAG=signed-$channel"
+            echo "IPA_BASE_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/signed-$channel"
             echo "APP_NAME=MuffinEMU"
             echo "IPA_ASSET_NAME=MuffinEMU.ipa"
             echo "LOGO_URL=https://muffinemu.github.io/MuffinEMU/assets/icon-180.png"
@@ -179,6 +186,26 @@ jobs:
           # this run was dispatched with one; blank leaves it on the latest release.
           UNSIGNED_IPA_URL: ${{ github.event.inputs.ipa_url }}
         run: ./scripts/generate_index.sh
+
+      # Host the signed IPAs as assets of a rolling release (git rejects files
+      # over 100 MB). Upload first, then drop assets for certificates that left
+      # the pool, so the install links never point at a missing file.
+      - name: Publish signed IPAs to release
+        if: steps.precheck.outputs.skip != 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$RELEASE_TAG" >/dev/null 2>&1 \
+            || gh release create "$RELEASE_TAG" --title "Signed MuffinEMU builds ($CHANNEL)" \
+                 --notes "Signed copies of MuffinEMU used by the on-device install page. Rebuilt automatically." --prerelease
+          shopt -s nullglob
+          ipas=("$OUTPUT_DIR"/muffinemu-*.ipa)
+          gh release upload "$RELEASE_TAG" "${ipas[@]}" --clobber
+          keep=$(printf '%s\n' "${ipas[@]}" | xargs -n1 basename)
+          for asset in $(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name'); do
+            grep -qxF "$asset" <<<"$keep" || gh release delete-asset "$RELEASE_TAG" "$asset" -y
+          done
 
       # Commit the state the precheck computed, not a fresh one, so the next run's
       # comparison is against exactly the inputs this page was built from.
