@@ -17,11 +17,15 @@ else
 fi
 GITHUB_BRANCH="${GITHUB_BRANCH:-main}"
 OUTPUT_BASE_URL="${OUTPUT_BASE_URL:-https://raw.githubusercontent.com/$GITHUB_USER/$GITHUB_REPO/$GITHUB_BRANCH/output}"
+# Where the signed IPAs are downloaded from. Defaults to the same place as the
+# manifests, but a MuffinEMU IPA is over GitHub's 100 MB per-file git limit, so
+# the workflow hosts them as release assets and sets this to the release URL.
+IPA_BASE_URL="${IPA_BASE_URL:-$OUTPUT_BASE_URL}"
 
 generate_one() {
   local IPA_PATH="$1" PLIST_OUT="$2"
   local IPA_FILENAME; IPA_FILENAME="$(basename "$IPA_PATH")"
-  local IPA_URL="$OUTPUT_BASE_URL/$IPA_FILENAME"
+  local IPA_URL="$IPA_BASE_URL/$IPA_FILENAME"
 
   local TMPDIR; TMPDIR="$(mktemp -d)"
   if ! unzip -q "$IPA_PATH" -d "$TMPDIR"; then
